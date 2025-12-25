@@ -19,12 +19,12 @@ using namespace plugin;
 constexpr int VEH_POLICE_LA = 596;
 constexpr int VEH_POLICE_SF = 597;
 constexpr int VEH_POLICE_LV = 598;
-constexpr int VEH_POLICE_RURAL = 599;
+constexpr int VEH_PATRIOT = 470;
 
 constexpr int NPC_COP_LA = 280;
 constexpr int NPC_COP_SF = 281;
 constexpr int NPC_COP_LV = 282;
-constexpr int NPC_COP_RURAL = 283;
+constexpr int NPC_ARMY = 287;
 
 struct ExtraCopInfo {
     CPed* ped;
@@ -45,7 +45,7 @@ public:
         case VEH_POLICE_LA:    return NPC_COP_LA;
         case VEH_POLICE_SF:    return NPC_COP_SF;
         case VEH_POLICE_LV:    return NPC_COP_LV;
-        case VEH_POLICE_RURAL: return NPC_COP_RURAL;
+        case VEH_PATRIOT:      return NPC_ARMY;
         default: return -1;
         }
     }
@@ -93,8 +93,14 @@ public:
                     if (Command<Commands::HAS_MODEL_LOADED>(pedModel))
                     {
                         int hVeh = CPools::GetVehicleRef(pVeh);
+
                         if (pVeh->m_apPassengers[1] == nullptr) CreateExtraCop(pVeh, hVeh, pedModel, 1);
                         if (pVeh->m_apPassengers[2] == nullptr) CreateExtraCop(pVeh, hVeh, pedModel, 2);
+
+                        if (pVeh->m_nModelIndex == VEH_PATRIOT) {
+                            if (pVeh->m_apPassengers[0] == nullptr)
+                                CreateExtraCop(pVeh, hVeh, pedModel, 0);
+                        }
                     }
                 }
             }
@@ -105,7 +111,7 @@ public:
     {
         int hNewCop;
         Command<Commands::CREATE_CHAR_AS_PASSENGER>(hVeh, PED_TYPE_COP, modelID, seatID, &hNewCop);
-        Command<Commands::GIVE_WEAPON_TO_CHAR>(hNewCop, WEAPONTYPE_PISTOL, 9999);
+        Command<Commands::GIVE_WEAPON_TO_CHAR>(hNewCop, WEAPON_PISTOL, 9999);
 
         CPed* pPed = CPools::GetPed(hNewCop);
         if (pPed) {
@@ -188,11 +194,11 @@ public:
                 ExtraCopInfo* bestCandidate = nullptr;
                 float closestDist = 99999.0f;
                 for (auto* unit : squad) {
-                    if (unit->designatedSeat == 0) { bestCandidate = unit; break; }
+                    if (unit->designatedSeat == -1) { bestCandidate = unit; break; }
                     float d = (float)DistanceBetweenPoints(unit->ped->GetPosition(), vehPos);
                     if (d < closestDist) { closestDist = d; bestCandidate = unit; }
                 }
-                if (bestCandidate) bestCandidate->designatedSeat = 0;
+                if (bestCandidate) bestCandidate->designatedSeat = -1;
             }
 
             for (auto* unit : squad) {
@@ -204,12 +210,12 @@ public:
                     if (unit->ped->m_ePedState == PEDSTATE_EXIT_CAR)
                     {
                         int hPed = CPools::GetPedRef(unit->ped);
-                        if (unit->designatedSeat == 0)
+                        if (unit->designatedSeat == -1)
                             Command<Commands::TASK_ENTER_CAR_AS_DRIVER>(hPed, hVeh, -1);
                         else
                             Command<Commands::TASK_ENTER_CAR_AS_PASSENGER>(hPed, hVeh, unit->designatedSeat, -1);
                     }
-                    else if (unit->designatedSeat != 0)
+                    else if (unit->designatedSeat != -1)
                     {
                         int hPed = CPools::GetPedRef(unit->ped);
                         if (currentDriver && isDriverAlive) {
@@ -229,7 +235,7 @@ public:
                     {
                         int hPed = CPools::GetPedRef(unit->ped);
 
-                        if (unit->designatedSeat == 0)
+                        if (unit->designatedSeat == -1)
                             Command<Commands::TASK_ENTER_CAR_AS_DRIVER>(hPed, hVeh, -1);
                         else
                             Command<Commands::TASK_ENTER_CAR_AS_PASSENGER>(hPed, hVeh, unit->designatedSeat, -1);
