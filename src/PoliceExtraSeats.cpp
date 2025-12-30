@@ -5,7 +5,8 @@
 #include <CPlayerPed.h>     
 #include <CWanted.h>        
 #include <ePedState.h>      
-#include <eWeaponType.h>    
+#include <eWeaponType.h>
+#include <ePedType.h>
 #include <extensions/ScriptCommands.h>
 #include <extensions/scripting/ScriptCommandNames.h>
 #include <CTimer.h>
@@ -84,6 +85,8 @@ public:
 
             if (pVeh->m_pDriver && pVeh->m_pDriver->IsAlive())
             {
+                if (pVeh->m_pDriver->m_nPedType != PED_TYPE_COP) continue;
+
                 int pedModel = GetCopModelForCar(pVeh->m_nModelIndex);
 
                 if (pedModel != -1)
@@ -111,7 +114,7 @@ public:
     {
         int hNewCop;
         Command<Commands::CREATE_CHAR_AS_PASSENGER>(hVeh, PED_TYPE_COP, modelID, seatID, &hNewCop);
-        Command<Commands::GIVE_WEAPON_TO_CHAR>(hNewCop, WEAPON_PISTOL, 9999);
+        Command<Commands::GIVE_WEAPON_TO_CHAR>(hNewCop, WEAPONTYPE_PISTOL, 9999);
 
         CPed* pPed = CPools::GetPed(hNewCop);
         if (pPed) {
